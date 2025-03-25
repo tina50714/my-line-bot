@@ -77,9 +77,27 @@ const handleEvent = async (event) => {
     }
   } else {
     console.log('無法辨識的訊息，回應錯誤');
+    // 發送錯誤訊息回應給用戶
     return client.replyMessage(event.replyToken, {
       type: 'text',
       text: '我看不懂你想表達什麼❓️請輸入正確關鍵字❗️'
     });
   }
 };
+
+// Webhook 路由處理
+app.post('/webhook', line.middleware(config), (req, res) => {
+  Promise.all(req.body.events.map(handleEvent))
+    .then(() => res.status(200).send('OK')) // 當事件處理成功時回應 OK
+    .catch((err) => { // 當出現錯誤時，回應 500
+      console.error(err);
+      res.status(500).end();
+    });
+});
+
+// 啟動伺服器
+const port = process.env.PORT || 3000;
+
+app.listen(port, () => {
+  console.log(`伺服器正在運行，端口：${port}`);
+});
