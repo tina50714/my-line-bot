@@ -71,22 +71,22 @@ const handleEvent = async (event) => {
 
   // 檢查關鍵字是否存在
   if (responses[userMessage]) {
-    sentMessages.add(userId);  // 標記該用戶已經回應過
-    return new Promise((resolve, reject) => {
-      setTimeout(async () => {
-        try {
-          await client.pushMessage(userId, {
-            type: 'text',
-            text: responses[userMessage]
-          });
-        } catch (error) {
-          console.error(error);
-        } finally {
-          sentMessages.delete(userId); // 回應後，移除標記
-          resolve();
-        }
-      }, 15000);
-    });
+    // 標記該用戶已經回應過
+    sentMessages.add(userId); 
+
+    try {
+      // 延遲發送訊息後清除標記
+      await new Promise((resolve) => setTimeout(resolve, 15000));
+      await client.pushMessage(userId, {
+        type: 'text',
+        text: responses[userMessage]
+      });
+    } catch (error) {
+      console.error('Error sending message:', error);
+    } finally {
+      // 確保標記在發送後清除
+      sentMessages.delete(userId); 
+    }
   } else {
     return client.replyMessage(event.replyToken, {
       type: 'text',
