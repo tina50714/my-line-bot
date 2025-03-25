@@ -6,8 +6,8 @@ const app = express();
 
 // LINE Bot 配置
 const config = {
-  channelAccessToken: process.env.LINE_ACCESS_TOKEN,  // 從環境變數讀取
-  channelSecret: process.env.LINE_SECRET  // 從環境變數讀取
+  channelAccessToken: process.env.LINE_ACCESS_TOKEN,
+  channelSecret: process.env.LINE_SECRET
 };
 
 const client = new line.Client(config);
@@ -73,24 +73,29 @@ const handleEvent = async (event) => {
   // 檢查關鍵字是否存在
   if (responses[userMessage]) {
     sentMessages.add(userId);  // 標記該用戶已經回應過
-    return new Promise((resolve, reject) => {
-      setTimeout(async () => {
-        try {
-          await client.pushMessage(userId, {
-            type: 'text',
-            text: responses[userMessage]
-          });
-        } catch (error) {
-          console.error(error);
-        } finally {
-          sentMessages.delete(userId); // 回應後，移除標記
-          resolve();
-        }
-      }, 15000); // 延遲 15 秒再發送回應
-    });
+
+    try {
+      // 延遲 15 秒後回應
+      await new Promise((resolve, reject) => {
+        setTimeout(async () => {
+          try {
+            await client.pushMessage(userId, {
+              type: 'text',
+              text: responses[userMessage]
+            });
+            resolve();
+          } catch (error) {
+            console.error(error);
+            reject(error);
+          }
+        }, 15000); // 延遲 15 秒後再發送回應
+      });
+    } finally {
+      sentMessages.delete(userId); // 確保回應後移除標記
+    }
   } else {
-    // 用戶輸入的不是預定關鍵字
-    return client.replyMessage(event.replyToken, {
+    // 用戶輸入的不是預定的關鍵字
+    await client.replyMessage(event.replyToken, {
       type: 'text',
       text: '我看不懂你想表達什麼❓️請輸入正確關鍵字❗️'
     });
