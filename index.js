@@ -16,19 +16,23 @@ const client = new line.Client(config);
 app.use(express.static(path.join(__dirname, 'public')));
 
 // 用來記錄已發送訊息的用戶 ID
-const sentMessages = new Set(); 
+const sentMessages = new Set();
 
 // 處理事件的函數
 const handleEvent = async (event) => {
   if (event.type !== 'message' || event.message.type !== 'text') {
+    console.log('非文字訊息，跳過');
     return Promise.resolve(null);
-  }  
+  }
 
   const userMessage = event.message.text;
   const userId = event.source.userId;
 
+  console.log(`收到訊息: ${userMessage}, 用戶ID: ${userId}`);
+
   // 檢查該用戶是否已經發送過訊息
   if (sentMessages.has(userId)) {
+    console.log(`用戶 ${userId} 已經發送過訊息，跳過處理`);
     return; // 如果已經回應過，就不再處理
   }
 
@@ -72,22 +76,27 @@ const handleEvent = async (event) => {
   // 檢查關鍵字是否存在
   if (responses[userMessage]) {
     // 標記該用戶已經回應過
-    sentMessages.add(userId); 
+    sentMessages.add(userId);
+    console.log(`標記用戶 ${userId} 已回應`);
 
     try {
-      // 延遲發送訊息後清除標記
+      // 延遲發送訊息
       await new Promise((resolve) => setTimeout(resolve, 15000));
+      
+      console.log(`發送訊息給用戶 ${userId}: ${responses[userMessage]}`);
       await client.pushMessage(userId, {
         type: 'text',
         text: responses[userMessage]
       });
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('發送訊息錯誤:', error);
     } finally {
-      // 確保標記在發送後清除
-      sentMessages.delete(userId); 
+      // 發送完畢後清除標記
+      sentMessages.delete(userId);
+      console.log(`清除用戶 ${userId} 的標記`);
     }
   } else {
+    console.log('無法辨識的訊息，回應錯誤');
     return client.replyMessage(event.replyToken, {
       type: 'text',
       text: '我看不懂你想表達什麼❓️請輸入正確關鍵字❗️'
