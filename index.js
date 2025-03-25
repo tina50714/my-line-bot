@@ -1,16 +1,15 @@
-require('dotenv').config(); // 確保可以讀取 .env
-
 const express = require('express');
 const line = require('@line/bot-sdk');
 const path = require('path');
 
 const app = express();
 
-// ✅ 正確的 LINE Bot 配置
+// LINE Bot 配置
 const config = {
-  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,  // 修正名稱
-  channelSecret: process.env.CHANNEL_SECRET  // 修正名稱
+  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,  // ✅ 讀取環境變數
+  channelSecret: process.env.CHANNAL_SECRET  // ✅ 讀取環境變數
 };
+
 
 const client = new line.Client(config);
 
@@ -66,16 +65,16 @@ const handleEvent = async (event) => {
   if (responses[userMessage]) {
     return new Promise((resolve, reject) => {
       setTimeout(async () => {
-        try {
-          await client.pushMessage(event.source.userId, {
-            type: 'text',
-            text: responses[userMessage]
-          });
-          resolve();
-        } catch (error) {
-          console.error(error);
-          resolve();
-        }
+        try{
+        await client.pushMessage(event.source.userId, {
+          type: 'text',
+          text: responses[userMessage]
+        });
+        resolve();
+      } catch(error){ 
+        console.error(error);
+        resolve();
+      }
       }, 15000);
     });
   } else {
@@ -102,3 +101,4 @@ const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`伺服器正在運行，端口：${port}`);
 });
+
