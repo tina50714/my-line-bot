@@ -99,5 +99,5 @@ app.post('/webhook', line.middleware(config), (req, res) => {
 const port = process.env.PORT || 3000;
 
 app.listen(port, () => {
-  console.log('伺服器正在運行，端口：${port}`);
+  console.log(`伺服器正在運行，端口：${port}`);
 });
