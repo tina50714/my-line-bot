@@ -17,6 +17,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // 用來記錄已發送訊息的用戶 ID
 const sentMessages = new Set(); // 用 Set 儲存已回應的用戶 ID
+const processingUsers = new Set(); // 用來標記正在處理回應的用戶
 
 // 處理事件的函數
 const handleEvent = async (event) => {
@@ -27,10 +28,10 @@ const handleEvent = async (event) => {
   const userMessage = event.message.text;
   const userId = event.source.userId;
 
-  // 檢查該用戶是否已經發送過訊息
-  if (sentMessages.has(userId)) {
+  // 檢查該用戶是否已經發送過訊息或是否正在處理中
+  if (sentMessages.has(userId) || processingUsers.has(userId)) {
     console.log(`用戶 ${userId} 已經收到過回應，跳過處理`);
-    return; // 如果已經回應過，就不再處理
+    return; // 如果已經回應過或正在處理中，就不再處理
   }
 
   // 使用物件來存放關鍵字對應的回應
@@ -72,26 +73,25 @@ const handleEvent = async (event) => {
 
   // 檢查關鍵字是否存在
   if (responses[userMessage]) {
-    sentMessages.add(userId);  // 標記該用戶已經回應過
-
+    // 標記該用戶正在處理中
+    processingUsers.add(userId);
     try {
-      // 延遲 15 秒後回應
-      await new Promise((resolve, reject) => {
-        setTimeout(async () => {
-          try {
-            await client.pushMessage(userId, {
-              type: 'text',
-              text: responses[userMessage]
-            });
-            resolve();
-          } catch (error) {
-            console.error(error);
-            reject(error);
-          }
-        }, 15000); // 延遲 15 秒後再發送回應
+      // 立即回應
+      await client.pushMessage(userId, {
+        type: 'text',
+        text: responses[userMessage]
       });
-    } finally {
-      sentMessages.delete(userId); // 確保回應後移除標記
+
+      // 記錄該用戶已回應
+      sentMessages.add(userId);
+
+      // 延遲 15 秒後移除標記，確保不會再處理
+      setTimeout(() => {
+        processingUsers.delete(userId);
+      }, 15000);
+    } catch (error) {
+      console.error(error);
+      processingUsers.delete(userId); // 出錯時移除標記
     }
   } else {
     // 用戶輸入的不是預定的關鍵字
