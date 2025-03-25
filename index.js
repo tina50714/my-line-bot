@@ -16,7 +16,11 @@ const client = new line.Client(config);
 app.use(express.static(path.join(__dirname, 'public')));
 
 // 處理事件的函數
-const handleEvent = (event) => {
+const handleEvent = async (event) => {
+  if (event.type !== 'message' || event.message.type !== 'text') {
+    return Promise.resolve(null);
+  }  
+
   const userMessage = event.message.text;
 
   // 使用物件來存放關鍵字對應的回應
@@ -59,11 +63,17 @@ const handleEvent = (event) => {
   // 檢查關鍵字是否存在
   if (responses[userMessage]) {
     return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        client.pushMessage(event.source.userId, {
+      setTimeout(async () => {
+        try{
+        await client.pushMessage(event.source.userId, {
           type: 'text',
           text: responses[userMessage]
-        }).catch(err => console.error(err));
+        });
+        resolve();
+      } catch(error){ 
+        console.error(error);
+        resolve();
+      }
       }, 15000);
     });
   } else {
@@ -84,6 +94,10 @@ app.post('/webhook', line.middleware(config), (req, res) => {
     });
 });
 
+// 啟動伺服器
+app.listen(3000, () => {
+  console.log('伺服器正在運行，端口：3000');
+});
 // 啟動伺服器
 app.listen(3000, () => {
   console.log('伺服器正在運行，端口：3000');
