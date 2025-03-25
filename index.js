@@ -5,7 +5,7 @@ const path = require('path');
 const app = express();
 
 // LINE Bot 配置
-cconst config = {
+const config = {
   channelAccessToken: process.env.LINE_ACCESS_TOKEN,  // ✅ 讀取環境變數
   channelSecret: process.env.LINE_SECRET  // ✅ 讀取環境變數
 };
