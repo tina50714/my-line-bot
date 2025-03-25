@@ -15,9 +15,8 @@ const client = new line.Client(config);
 // 提供 LIFF 靜態網頁
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 用來記錄已發送訊息的用戶 ID
-const sentMessages = new Set(); // 用 Set 儲存已回應的用戶 ID
-const processingUsers = new Set(); // 用來標記正在處理回應的用戶
+// 用來記錄已回應訊息的用戶 ID
+const sentMessages = new Map(); // 儲存已回應的用戶 ID 及其對應訊息
 
 // 處理事件的函數
 const handleEvent = async (event) => {
@@ -28,10 +27,10 @@ const handleEvent = async (event) => {
   const userMessage = event.message.text;
   const userId = event.source.userId;
 
-  // 檢查該用戶是否已經發送過訊息或是否正在處理中
-  if (sentMessages.has(userId) || processingUsers.has(userId)) {
+  // 檢查該用戶是否已經回應過該訊息
+  if (sentMessages.has(userId) && sentMessages.get(userId) === userMessage) {
     console.log(`用戶 ${userId} 已經收到過回應，跳過處理`);
-    return; // 如果已經回應過或正在處理中，就不再處理
+    return; // 如果該用戶已經收到對應的回應，跳過處理
   }
 
   // 使用物件來存放關鍵字對應的回應
@@ -73,26 +72,24 @@ const handleEvent = async (event) => {
 
   // 檢查關鍵字是否存在
   if (responses[userMessage]) {
-    // 標記該用戶正在處理中
-    processingUsers.add(userId);
-    try {
-      // 立即回應
-      await client.pushMessage(userId, {
-        type: 'text',
-        text: responses[userMessage]
-      });
+    // 延遲 15 秒後回應訊息
+    setTimeout(async () => {
+      try {
+        // 發送回應
+        await client.pushMessage(userId, {
+          type: 'text',
+          text: responses[userMessage]
+        });
 
-      // 記錄該用戶已回應
-      sentMessages.add(userId);
+        // 記錄用戶訊息，標記為已回應
+        sentMessages.set(userId, userMessage);
 
-      // 延遲 15 秒後移除標記，確保不會再處理
-      setTimeout(() => {
-        processingUsers.delete(userId);
-      }, 15000);
-    } catch (error) {
-      console.error(error);
-      processingUsers.delete(userId); // 出錯時移除標記
-    }
+        console.log(`已回應用戶 ${userId}: ${responses[userMessage]}`);
+
+      } catch (error) {
+        console.error('發送訊息失敗', error);
+      }
+    }, 15000); // 等待 15 秒後回應
   } else {
     // 用戶輸入的不是預定的關鍵字
     await client.replyMessage(event.replyToken, {
