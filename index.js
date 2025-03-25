@@ -1,23 +1,3 @@
-const express = require('express');
-const line = require('@line/bot-sdk');
-const path = require('path');
-
-const app = express();
-
-// LINE Bot 配置
-const config = {
-  channelAccessToken: process.env.LINE_ACCESS_TOKEN,  // ✅ 讀取環境變數
-  channelSecret: process.env.LINE_SECRET  // ✅ 讀取環境變數
-};
-
-const client = new line.Client(config);
-
-// 提供 LIFF 靜態網頁
-app.use(express.static(path.join(__dirname, 'public')));
-
-// 用來記錄已發送訊息的用戶 ID
-const sentMessages = new Set();
-
 // 處理事件的函數
 const handleEvent = async (event) => {
   if (event.type !== 'message' || event.message.type !== 'text') {
@@ -25,7 +5,7 @@ const handleEvent = async (event) => {
     return Promise.resolve(null);
   }
 
-  const userMessage = event.message.text;
+  const userMessage = event.message.text.trim().toLowerCase(); // 小寫並去除空格
   const userId = event.source.userId;
 
   console.log(`收到訊息: ${userMessage}, 用戶ID: ${userId}`);
@@ -103,20 +83,3 @@ const handleEvent = async (event) => {
     });
   }
 };
-
-// Webhook 路由處理
-app.post('/webhook', line.middleware(config), (req, res) => {
-  Promise.all(req.body.events.map(handleEvent))
-    .then(() => res.status(200).send('OK')) // 當事件處理成功時回應 OK
-    .catch((err) => { // 當出現錯誤時，回應 500
-      console.error(err);
-      res.status(500).end();
-    });
-});
-
-// 啟動伺服器
-const port = process.env.PORT || 3000;
-
-app.listen(port, () => {
-  console.log(`伺服器正在運行，端口：${port}`);
-});
