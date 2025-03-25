@@ -10,11 +10,13 @@ const config = {
   channelSecret: process.env.LINE_SECRET  // ✅ 讀取環境變數
 };
 
-
 const client = new line.Client(config);
 
 // 提供 LIFF 靜態網頁
 app.use(express.static(path.join(__dirname, 'public')));
+
+// 用來記錄已發送訊息的用戶 ID
+const sentMessages = new Set(); 
 
 // 處理事件的函數
 const handleEvent = async (event) => {
@@ -23,6 +25,12 @@ const handleEvent = async (event) => {
   }  
 
   const userMessage = event.message.text;
+  const userId = event.source.userId;
+
+  // 檢查該用戶是否已經發送過訊息
+  if (sentMessages.has(userId)) {
+    return; // 如果已經回應過，就不再處理
+  }
 
   // 使用物件來存放關鍵字對應的回應
   const responses = {
@@ -63,18 +71,20 @@ const handleEvent = async (event) => {
 
   // 檢查關鍵字是否存在
   if (responses[userMessage]) {
+    sentMessages.add(userId);  // 標記該用戶已經回應過
     return new Promise((resolve, reject) => {
       setTimeout(async () => {
-        try{
-        await client.pushMessage(event.source.userId, {
-          type: 'text',
-          text: responses[userMessage]
-        });
-        resolve();
-      } catch(error){ 
-        console.error(error);
-        resolve();
-      }
+        try {
+          await client.pushMessage(userId, {
+            type: 'text',
+            text: responses[userMessage]
+          });
+        } catch (error) {
+          console.error(error);
+        } finally {
+          sentMessages.delete(userId); // 回應後，移除標記
+          resolve();
+        }
       }, 15000);
     });
   } else {
