@@ -5,10 +5,11 @@ const path = require('path');
 const app = express();
 
 // LINE Bot 配置
-const config = {
-  channelAccessToken: '169LGu4yh9OIrZGJugmI/HlMXJf3utAg75WAORUnzr6sDa6Nsk88H5J0HUPf3oZ0Zpn9Z+axVRKs5XBXRJMtOZwNKbAQ1iGTK0uzHiie377hmEYY5QSPhTVyCurLpnVfWcTHFpBSKA36W2RDfRoABQdB04t89/1O/w1cDnyilFU=', // 替換成你的 Channel Access Token
-  channelSecret: '990e7aa76f3d5b60444924674e40cb8a' // 替換成你的 Channel Secret
+cconst config = {
+  channelAccessToken: process.env.LINE_ACCESS_TOKEN,  // ✅ 讀取環境變數
+  channelSecret: process.env.LINE_SECRET  // ✅ 讀取環境變數
 };
+
 
 const client = new line.Client(config);
 
@@ -97,6 +98,6 @@ app.post('/webhook', line.middleware(config), (req, res) => {
 // 啟動伺服器
 const port = process.env.PORT || 3000;
 
-app.listen(3000, () => {
+app.listen(port, () => {
   console.log('伺服器正在運行，端口：${port}`);
 });
