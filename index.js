@@ -6,8 +6,8 @@ const app = express();
 
 // LINE Bot 配置
 const config = {
-  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,  // ✅ 讀取環境變數
-  channelSecret: process.env.CHANNAL_SECRET  // ✅ 讀取環境變數
+  channelAccessToken: process.env.LINE_ACCESS_TOKEN,  // ✅ 讀取環境變數
+  channelSecret: process.env.LINE_SECRET  // ✅ 讀取環境變數
 };
 
 
@@ -101,4 +101,3 @@ const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`伺服器正在運行，端口：${port}`);
 });
-
