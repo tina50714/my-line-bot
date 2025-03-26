@@ -15,6 +15,11 @@ const client = new line.Client(config);
 // 提供 LIFF 靜態網頁
 app.use(express.static(path.join(__dirname, 'public')));
 
+// 允許訪問 /liff/index.html
+app.get("/liff/index.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
 // 用來記錄已回應訊息的用戶 ID
 const sentMessages = new Map(); // 儲存已回應的用戶 ID 及其對應訊息
 
