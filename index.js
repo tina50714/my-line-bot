@@ -12,12 +12,9 @@ const config = {
 
 const client = new line.Client(config);
 
-// 提供 LIFF 靜態網頁
-app.use(express.static(path.join(__dirname, 'public')));
-
-// 允許訪問 /liff/index.html
-app.get("/liff/index.html", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+// 允許訪問 LIFF 頁面
+app.get('/liff/index.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // 用來記錄已回應訊息的用戶 ID
