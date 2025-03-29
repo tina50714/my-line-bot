@@ -1,26 +1,46 @@
+require('dotenv').config();
+
 const express = require('express');
 const line = require('@line/bot-sdk');
 const path = require('path');
 
 const app = express();
 
+// 靜態資源路徑 (重要)
+app.use(express.static('public'));
+
 // LINE Bot 配置
 const config = {
-  channelAccessToken: process.env.LINE_ACCESS_TOKEN,
-  channelSecret: process.env.LINE_SECRET
+  channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
+  channelSecret: process.env.LINE_CHANNEL_SECRET
 };
 
 const client = new line.Client(config);
 
-// 允許訪問 LIFF 頁面
-app.get('/liff/index.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+// 用來記錄已回應訊息的用戶 ID
+const sentMessages = new Map();
+
+// 預設首頁 (可有可無)
+app.get('/', (req, res) => {
+  res.send('LIFF Server is running');
 });
 
-// 用來記錄已回應訊息的用戶 ID
-const sentMessages = new Map(); // 儲存已回應的用戶 ID 及其對應訊息
+// LIFF 測試頁 (非必要)
+app.get('/liff/index.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
-// 處理事件的函數
+// Webhook 路由處理
+app.post('/webhook', line.middleware(config), (req, res) => {
+  Promise.all(req.body.events.map(handleEvent))
+    .then(() => res.status(200).send('OK'))
+    .catch((err) => {
+      console.error(err);
+      res.status(500).end();
+    });
+});
+
+// 處理 LINE Bot 事件
 const handleEvent = async (event) => {
   if (event.type !== 'message' || event.message.type !== 'text') {
     return Promise.resolve(null);
@@ -29,13 +49,6 @@ const handleEvent = async (event) => {
   const userMessage = event.message.text;
   const userId = event.source.userId;
 
-  // 檢查該用戶是否已經回應過該訊息
-  if (sentMessages.has(userId) && sentMessages.get(userId) === userMessage) {
-    console.log(`用戶 ${userId} 已經收到過回應，跳過處理`);
-    return; // 如果該用戶已經收到對應的回應，跳過處理
-  }
-
-  // 使用物件來存放關鍵字對應的回應
   const responses = {
     "1-1": "⚠️「1-1」穩定運送單 請確認是否完成!!⚠️",
     "1-2": "⚠️「1-2」穩定運送單 請確認是否完成!!⚠️",
@@ -72,28 +85,27 @@ const handleEvent = async (event) => {
     "20": "⚠️「20」穩定運送單 請確認是否完成!!⚠️"
   };
 
-  // 檢查關鍵字是否存在
   if (responses[userMessage]) {
-    // 延遲 15 秒後回應訊息
+    if (sentMessages.has(userId) && sentMessages.get(userId) === userMessage) {
+      console.log(`用戶 ${userId} 已回應，跳過`);
+      return;
+    }
+
     setTimeout(async () => {
       try {
-        // 發送回應
         await client.pushMessage(userId, {
           type: 'text',
           text: responses[userMessage]
         });
 
-        // 記錄用戶訊息，標記為已回應
         sentMessages.set(userId, userMessage);
-
-        console.log(`已回應用戶 ${userId}: ${responses[userMessage]}`);
+        console.log(`已回應 ${userId}: ${responses[userMessage]}`);
 
       } catch (error) {
-        console.error('發送訊息失敗', error);
+        console.error('推送失敗', error);
       }
-    }, 15000); // 等待 15 秒後回應
+    }, 15000);
   } else {
-    // 用戶輸入的不是預定的關鍵字
     await client.replyMessage(event.replyToken, {
       type: 'text',
       text: '我看不懂你想表達什麼❓️請輸入正確關鍵字❗️'
@@ -101,19 +113,8 @@ const handleEvent = async (event) => {
   }
 };
 
-// Webhook 路由處理
-app.post('/webhook', line.middleware(config), (req, res) => {
-  Promise.all(req.body.events.map(handleEvent))
-    .then(() => res.status(200).send('OK')) // 當事件處理成功時回應 OK
-    .catch((err) => { // 當出現錯誤時，回應 500
-      console.error(err);
-      res.status(500).end();
-    });
-});
-
-// 啟動伺服器
 const port = process.env.PORT || 3000;
 
 app.listen(port, () => {
-  console.log(`伺服器正在運行，端口：${port}`);
+  console.log(`伺服器運行中, Port: ${port}`);
 });
