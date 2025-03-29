@@ -1,21 +1,34 @@
 require('dotenv').config();
+console.log('ACCESS TOKEN 測試:', process.env.LINE_CHANNEL_ACCESS_TOKEN);
 
-const express = require('express');
+
+// 打印所有環境變數，幫助確定 .env 檔案是否正確加載
+console.log('環境變數:', process.env);
+
+// 打印出單獨的 LINE_CHANNEL_ACCESS_TOKEN
+console.log('LINE_CHANNEL_ACCESS_TOKEN:', process.env.LINE_CHANNEL_ACCESS_TOKEN);
+
 const line = require('@line/bot-sdk');
+const express = require('express');
+
 const path = require('path');
 
 const app = express();
 
 // 靜態資源路徑 (重要)
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // LINE Bot 配置
+console.log('LINE_CHANNEL_ACCESS_TOKEN:', process.env.LINE_CHANNEL_ACCESS_TOKEN);
+console.log('LINE_CHANNEL_SECRET:', process.env.LINE_CHANNEL_SECRET);
+
 const config = {
   channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
   channelSecret: process.env.LINE_CHANNEL_SECRET
 };
 
 const client = new line.Client(config);
+
 
 // 用來記錄已回應訊息的用戶 ID
 const sentMessages = new Map();
