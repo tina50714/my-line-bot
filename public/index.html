@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LIFF 自動發送關鍵字</title>
+    <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
+</head>
+<body>
+    <h1>🚩 正在自動發送，請稍候...</h1>
+
+    <script>
+        window.onload = async function () {
+            try {
+                // 初始化 LIFF
+                await liff.init({ liffId: "2007116810-r5MJRQ1j" });
+
+                // 確認是否在 LINE App 內
+                if (!liff.isInClient()) {
+                    alert("⚠ 請用 LINE APP 掃 NFC，否則無法自動發送");
+                    return;
+                }
+
+                // 解析 URL keyword
+                const urlParams = new URLSearchParams(window.location.search);
+                const keyword = urlParams.get('keyword');
+
+                if (!keyword) {
+                    alert("⚠ URL 缺少 keyword 參數");
+                    return;
+                }
+
+                // 驗證可用的關鍵字
+                const validKeywords = [
+                    '1-1', '1-2', '1-3', '2-1', '2-2', '2-3',
+                    '03', '05', '06', '7-1', '7-2', '8-1', '8-2',
+                    '9-1', '9-2', '10-1', '10-2', '11-1', '11-2',
+                    '12-1', '12-2', '13-1', '13-2', '15', '16',
+                    '17', '18-1', '18-2', '18-3', '19-1', '19-2',
+                    '19-3', '20'
+                ];
+
+                if (!validKeywords.includes(keyword)) {
+                    alert("❌ 無效的 keyword：" + keyword);
+                    return;
+                }
+
+                // 發送關鍵字到聊天室
+                await liff.sendMessages([{
+                    type: 'text',
+                    text: keyword
+                }]);
+
+                alert("✅ 已自動發送：" + keyword);
+                liff.closeWindow(); // 自動關閉 LIFF
+
+            } catch (error) {
+                console.error("發送失敗: ", error);
+                alert("❌ 發送失敗，請檢查 LIFF 設定");
+            }
+        }
+    </script>
+</body>
+</html>
