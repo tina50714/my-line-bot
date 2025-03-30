@@ -43,15 +43,11 @@ app.get('/liff/index.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Webhook 路由處理
-app.post('/webhook', line.middleware(config), (req, res) => {
-  Promise.all(req.body.events.map(handleEvent))
-    .then(() => res.status(200).send('OK'))
-    .catch((err) => {
-      console.error(err);
-      res.status(500).end();
-    });
-});
+/ Webhook 路由處理
+app.post('/webhook', express.json(), async (req, res) => {
+  try {
+    // 從請求中提取 keyword 參數
+    const { keyword } = req.body;
 
 // 處理 LINE Bot 事件
 const handleEvent = async (event) => {
