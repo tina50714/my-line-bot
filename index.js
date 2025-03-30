@@ -1,7 +1,6 @@
 require('dotenv').config();
 console.log('ACCESS TOKEN 測試:', process.env.LINE_CHANNEL_ACCESS_TOKEN);
 
-
 // 打印所有環境變數，幫助確定 .env 檔案是否正確加載
 console.log('環境變數:', process.env);
 
@@ -10,7 +9,6 @@ console.log('LINE_CHANNEL_ACCESS_TOKEN:', process.env.LINE_CHANNEL_ACCESS_TOKEN)
 
 const line = require('@line/bot-sdk');
 const express = require('express');
-
 const path = require('path');
 
 const app = express();
@@ -43,7 +41,40 @@ app.get('/liff/index.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Webhook 路由處理
+// ✅ **處理來自 LIFF 的 Webhook 請求**
+app.post('/liff-webhook', async (req, res) => {
+  try {
+    const { keyword, userId } = req.body;
+
+    if (!keyword || !userId) {
+      return res.status(400).json({ error: '缺少 keyword 或 userId' });
+    }
+
+    console.log('收到 LIFF 發送的關鍵字:', keyword);
+
+    // 根據關鍵字決定回應內容
+    const keywordResponses = {
+      "你好": "你好！有什麼需要幫助的嗎？",
+      "天氣": "今天天氣晴朗，記得多喝水哦！"
+    };
+
+    const replyMessage = keywordResponses[keyword] || "抱歉，我不太明白你的意思。";
+
+// 發送訊息到 LINE 用戶
+    await client.pushMessage(userId, {
+      type: 'text',
+      text: replyMessage,
+    });
+
+    res.json({ success: true, message: replyMessage });
+
+  } catch (error) {
+    console.error('處理 LIFF Webhook 時發生錯誤:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+    
+// ✅ **處理來自 LINE 官方 Webhook 的請求**
 app.post('/webhook', line.middleware(config), (req, res) => {
   Promise.all(req.body.events.map(handleEvent))
     .then(() => res.status(200).send('OK'))
@@ -52,7 +83,7 @@ app.post('/webhook', line.middleware(config), (req, res) => {
       res.status(500).end();
     });
 });
-
+      
 // 處理 LINE Bot 事件
 const handleEvent = async (event) => {
   if (event.type !== 'message' || event.message.type !== 'text') {
