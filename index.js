@@ -46,6 +46,14 @@ app.get('/liff/index.html', (req, res) => {
 // Webhook 路由處理
 app.post('/webhook', express.json(), async (req, res) => {
   try {
+    const events = req.body.events;
+    await Promise.all(events.map(handleEvent));
+    res.status(200).send('OK');
+  } catch (error) {
+    console.error('Webhook 錯誤:', error);
+    res.status(500).send('發生錯誤');
+  }
+});
     // 從請求中提取 keyword 參數
     const { keyword } = req.body;
 
