@@ -42,6 +42,8 @@ app.get('/liff/index.html', (req, res) => {
 });
 
 // ✅ **處理來自 LIFF 的 Webhook 請求**
+app.use(express.json()); // 確保 Express 解析 JSON
+
 app.post('/liff-webhook', async (req, res) => {
   try {
     const { keyword, userId } = req.body;
@@ -51,7 +53,8 @@ app.post('/liff-webhook', async (req, res) => {
     }
 
     console.log('收到 LIFF 發送的關鍵字:', keyword);
-
+    console.log('使用者 ID:', userId);
+    
     // 根據關鍵字決定回應內容
     const keywordResponses = {
       "你好": "你好！有什麼需要幫助的嗎？",
