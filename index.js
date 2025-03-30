@@ -43,7 +43,7 @@ app.get('/liff/index.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-/ Webhook 路由處理
+// Webhook 路由處理
 app.post('/webhook', express.json(), async (req, res) => {
   try {
     // 從請求中提取 keyword 參數
