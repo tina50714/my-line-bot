@@ -27,14 +27,6 @@ const config = {
   channelSecret: process.env.LINE_CHANNEL_SECRET
 };
 
-if (!config.channelAccessToken) {
-  throw new Error("no channel access token");
-}
-
-if (!config.channelSecret) {
-  throw new Error("no channel secret");
-}
-
 const client = new line.Client(config);
 
 
@@ -52,18 +44,14 @@ app.get('/liff/index.html', (req, res) => {
 });
 
 // Webhook 路由處理
-app.post('/webhook', express.json(), async (req, res) => {
-  try {
-    const events = req.body.events;
-    await Promise.all(events.map(handleEvent));
-    res.status(200).send('OK');
-  } catch (error) {
-    console.error('Webhook 錯誤:', error);
-    res.status(500).send('發生錯誤');
-  }
+app.post('/webhook', line.middleware(config), (req, res) => {
+  Promise.all(req.body.events.map(handleEvent))
+    .then(() => res.status(200).send('OK'))
+    .catch((err) => {
+      console.error(err);
+      res.status(500).end();
+    });
 });
-    // 從請求中提取 keyword 參數
-    const { keyword } = req.body;
 
 // 處理 LINE Bot 事件
 const handleEvent = async (event) => {
