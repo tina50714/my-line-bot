@@ -27,6 +27,14 @@ const config = {
   channelSecret: process.env.LINE_CHANNEL_SECRET
 };
 
+if (!config.channelAccessToken) {
+  throw new Error("no channel access token");
+}
+
+if (!config.channelSecret) {
+  throw new Error("no channel secret");
+}
+
 const client = new line.Client(config);
 
 
